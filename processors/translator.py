@@ -287,7 +287,6 @@ def _translate_chunk(text: str) -> str:
     providers = [
         ("microsoft", _microsoft_translate),
         ("google", _google_translate),
-        ("yandex", _yandex_translate),
         ("bing", _bing_translate),
     ]
 
@@ -308,7 +307,7 @@ def _translate_chunk(text: str) -> str:
                 time.sleep(0.5)
 
     # ── آخر ملاذ: أبقِ الإنجليزي ─────────────────────────────────────────────
-    logger.error(f"فشل الترجمة كلياً بعد 12 محاولات — يُبقى الأصل: {text[:60]}")
+    logger.error(f"فشل الترجمة كلياً بعد 9 محاولات — يُبقى الأصل: {text[:60]}")
     return text
 
 
