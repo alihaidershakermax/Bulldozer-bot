@@ -13,7 +13,9 @@ import logging
 import os
 import shutil
 import sys
+import threading
 import time as _time
+from aiohttp import web
 
 from telegram import Update, BotCommand
 from telegram.ext import (
@@ -533,5 +535,29 @@ def main() -> None:
     )
 
 
+def _start_health_server() -> None:
+    port = int(os.getenv("PORT", "8000"))
+    aio_app = web.Application()
+
+    async def health(_: web.Request) -> web.Response:
+        return web.Response(text="ok")
+
+    aio_app.router.add_get("/", health)
+    aio_app.router.add_get("/healthz", health)
+
+    runner = web.AppRunner(aio_app)
+
+    async def _run() -> None:
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", port)
+        await site.start()
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.create_task(_run())
+    loop.run_forever()
+
+
 if __name__ == "__main__":
+    threading.Thread(target=_start_health_server, daemon=True).start()
     main()
