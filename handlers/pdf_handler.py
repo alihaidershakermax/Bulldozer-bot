@@ -50,7 +50,6 @@ async def _daily_limit_text(user_id: int) -> str:
 async def handle_pdf(update: Update, context) -> None:
     global _QUEUE_WAITING
     user_id, _ = _user(update)
-    admin = is_admin(update)
     queue_position = 0
     queue_message = None
 
@@ -59,9 +58,9 @@ async def handle_pdf(update: Update, context) -> None:
         queue_position = _QUEUE_WAITING
         if update.message:
             queue_message = await update.message.reply_text(
-                f"⏳ ملفك داخل الطابور الآن\n"
-                f"📌 ترتيبك: {queue_position}\n"
-                f"👤 الأدمن/الطوارئ تتجاوز الطابور: {'نعم' if admin else 'لا'}",
+                f"⏳ <b>ملفك داخل الطابور</b>\n"
+                f"📌 <b>ترتيبك:</b> {queue_position}\n"
+                f"🧾 <b>الملفات قبلك:</b> {max(queue_position - 1, 0)}",
                 parse_mode=ParseMode.HTML,
             )
 
@@ -69,8 +68,8 @@ async def handle_pdf(update: Update, context) -> None:
         if queue_message:
             try:
                 await queue_message.edit_text(
-                    f"⏳ نبدت المعالجة\n"
-                    f"📌 ترتيبك السابق: {queue_position}",
+                    f"⏳ <b>بدأت المعالجة</b>\n"
+                    f"📌 <b>ترتيبك السابق:</b> {queue_position}",
                     parse_mode=ParseMode.HTML,
                 )
             except Exception:
