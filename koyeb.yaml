@@ -1,0 +1,23 @@
+name: telegram-pdf-bot
+services:
+  - name: bot
+    type: worker
+    docker:
+      dockerfile: Dockerfile
+      context: .
+    instance_types:
+      - eco-nano
+    regions:
+      - fra
+    env:
+      - key: TELEGRAM_BOT_TOKEN
+        value: "${TELEGRAM_BOT_TOKEN}"
+      - key: CONVEX_URL
+        value: "${CONVEX_URL}"
+      - key: TELEGRAM_LOG_CHANNEL
+        value: "${TELEGRAM_LOG_CHANNEL}"
+      - key: ADMIN_IDS
+        value: "${ADMIN_IDS}"
+      - key: TESSERACT_CMD
+        value: "/usr/bin/tesseract"
+    health_checks: []
