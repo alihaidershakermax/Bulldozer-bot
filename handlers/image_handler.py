@@ -39,6 +39,8 @@ def _user(update: Update):
 
 async def handle_image_document(update: Update, context) -> None:
     logger.info("📎 استقبال صورة كمستند")
+    if not update.message or not update.message.document:
+        return
     doc  = update.message.document
     ext  = os.path.splitext(doc.file_name or "")[1].lower()
     user_id, username = _user(update)
@@ -107,7 +109,9 @@ async def handle_image_document(update: Update, context) -> None:
 
 async def handle_photo(update: Update, context) -> None:
     logger.info("📸 استقبال صورة مضغوطة")
-    photos: list[PhotoSize] = update.message.photo
+    if not update.message or not update.message.photo:
+        return
+    photos: list[PhotoSize] = list(update.message.photo)
     if not photos:
         return
     best   = max(photos, key=lambda p: p.file_size or 0)
@@ -189,6 +193,10 @@ async def _process(
         arabic_paragraphs = await translate_paragraphs_async(paragraphs, _on_progress)
     except Exception as e:
         await pm.error(f"صار خطأ بالترجمة: {e}")
+        return
+
+    if not arabic_paragraphs or len(arabic_paragraphs) != len(paragraphs):
+        await pm.error("فشل توليد الترجمة بشكل صحيح.")
         return
 
     # ③.5 تحقق وإعادة ترجمة الفقرات الفاشلة
