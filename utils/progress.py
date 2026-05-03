@@ -52,12 +52,17 @@ class ProgressMessage:
 
     async def done(self, final_text: str) -> None:
         try:
-            await self._msg.edit_text(final_text, parse_mode=ParseMode.HTML)
+            if final_text != self._last_text:
+                await self._msg.edit_text(final_text, parse_mode=ParseMode.HTML)
         except Exception:
             pass
+        self._last_text = final_text
 
     async def error(self, err_text: str) -> None:
         try:
-            await self._msg.edit_text(f"❌ {err_text}", parse_mode=ParseMode.HTML)
+            final_text = f"❌ {err_text}"
+            if final_text != self._last_text:
+                await self._msg.edit_text(final_text, parse_mode=ParseMode.HTML)
         except Exception:
             pass
+        self._last_text = f"❌ {err_text}"
