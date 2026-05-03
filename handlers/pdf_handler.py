@@ -26,6 +26,7 @@ from config import MAX_FILE_SIZE_MB
 
 logger = logging.getLogger(__name__)
 MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+_FILE_QUEUE = asyncio.Semaphore(int(os.getenv("PDF_CONCURRENCY", "1")))
 
 
 def _user(update: Update):
@@ -46,6 +47,11 @@ async def _daily_limit_text(user_id: int) -> str:
 
 
 async def handle_pdf(update: Update, context) -> None:
+    async with _FILE_QUEUE:
+        await _handle_pdf_locked(update, context)
+
+
+async def _handle_pdf_locked(update: Update, context) -> None:
     logger.info("📄 استقبال ملف PDF")
     if not update.message or not update.message.document:
         return
