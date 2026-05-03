@@ -156,7 +156,7 @@ async def _handle_pdf_locked(update: Update, context) -> None:
                 logger.warning(f"OCR فشل للصفحة {i+1}: {e}")
 
         if not raw_texts:
-            await pm.error("ماكو نص اكو بالملف، تأكد الملف واضح.")
+            await pm.error("ماكو نص واضح بالملف، جرّب ملف أو صورة أوضح.")
             return
 
         await pm.update(62, "گاعد يرتّب الفقرات…", "ترتيب النص")
@@ -184,6 +184,10 @@ async def _handle_pdf_locked(update: Update, context) -> None:
             await pm.error(f"خطأ في الترجمة: {e}")
             return
 
+        if not arabic_paragraphs or len(arabic_paragraphs) != len(all_paragraphs):
+            await pm.error("فشل توليد الترجمة بشكل صحيح.")
+            return
+
         await pm.update(88, "گاعد يتحقق من الترجمة…", "التحقق")
 
         async def _on_validate(done: int, total: int) -> None:
@@ -203,10 +207,11 @@ async def _handle_pdf_locked(update: Update, context) -> None:
         await pm.update(90, "گاعد يسوّي ملف PDF…", "توليد الملف")
         output_pdf = os.path.join(temp_dir, original_filename)
         doc_title = os.path.splitext(original_filename)[0]
+        pairs = list(zip(all_paragraphs, arabic_paragraphs))
         try:
             await asyncio.to_thread(
                 build_translation_pdf,
-                list(zip(all_paragraphs, arabic_paragraphs)),
+                pairs,
                 output_pdf,
                 doc_title,
             )
