@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+*.env
+data/*.db
+bot.log
+*.log
+temp_*/
+node_modules/
+package-lock.json
+fonts/
+.DS_Store
+Thumbs.db
