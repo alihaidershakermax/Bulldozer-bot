@@ -11,6 +11,7 @@
 import re
 import asyncio
 import logging
+import random
 from typing import List, Tuple, Callable, Awaitable, Optional
 
 logger = logging.getLogger(__name__)
@@ -218,13 +219,43 @@ def _bing_translate(text: str) -> str:
     result = ts.translate_text(
         text, translator="bing", from_language="en", to_language="ar",
     )
-    return (result or "").strip()
+    return _normalize_translate_result(result)
 
 
 def _google_translate(text: str) -> str:
     from deep_translator import GoogleTranslator
     result = GoogleTranslator(source="en", target="ar").translate(text)
-    return (result or "").strip()
+    return _normalize_translate_result(result)
+
+
+def _normalize_translate_result(result) -> str:
+    if isinstance(result, str):
+        return result.strip()
+    if isinstance(result, dict):
+        for key in ("text", "result", "translation", "translatedText"):
+            value = result.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return ""
+    if result is None:
+        return ""
+    return str(result).strip()
+
+
+def _microsoft_translate(text: str) -> str:
+    import translators as ts
+    result = ts.translate_text(
+        text, translator="microsoft", from_language="en", to_language="ar",
+    )
+    return _normalize_translate_result(result)
+
+
+def _yandex_translate(text: str) -> str:
+    import translators as ts
+    result = ts.translate_text(
+        text, translator="yandex", from_language="en", to_language="ar",
+    )
+    return _normalize_translate_result(result)
 
 
 def _translate_sync(text: str) -> str:
@@ -254,34 +285,28 @@ def _translate_chunk(text: str) -> str:
     """
     import time
 
-    # ── Bing (3 محاولات) ────────────────────────────────────────────────────
-    for attempt in range(1, 4):
-        try:
-            result = _bing_translate(text)
-            if _is_valid_translation(text, result):
-                return result
-            logger.warning(
-                f"Bing محاولة {attempt}/3 — نسبة عربي منخفضة أو نتيجة غير مقبولة: "
-                f"{result[:50]!r}"
-            )
-        except Exception as e:
-            logger.warning(f"Bing خطأ (محاولة {attempt}/3): {e}")
-        if attempt < 3:
-            time.sleep(0.5)
+    providers = [
+        ("bing", _bing_translate),
+        ("microsoft", _microsoft_translate),
+        ("google", _google_translate),
+        ("yandex", _yandex_translate),
+    ]
+    random.shuffle(providers)
+    providers.insert(0, ("bing", _bing_translate))
 
-    # ── Google (3 محاولات) ───────────────────────────────────────────────────
-    for attempt in range(1, 4):
-        try:
-            result = _google_translate(text)
-            if _is_valid_translation(text, result):
-                return result
-            logger.warning(
-                f"Google محاولة {attempt}/3 — نسبة عربي منخفضة: {result[:50]!r}"
-            )
-        except Exception as e:
-            logger.warning(f"Google خطأ (محاولة {attempt}/3): {e}")
-        if attempt < 3:
-            time.sleep(0.8)
+    for name, fn in providers:
+        for attempt in range(1, 3):
+            try:
+                result = fn(text)
+                if _is_valid_translation(text, result):
+                    return result
+                logger.warning(
+                    f"{name} محاولة {attempt}/2 — نتيجة غير مقبولة: {result[:50]!r}"
+                )
+            except Exception as e:
+                logger.warning(f"{name} خطأ (محاولة {attempt}/2): {e}")
+            if attempt < 2:
+                time.sleep(0.5)
 
     # ── آخر ملاذ: أبقِ الإنجليزي ─────────────────────────────────────────────
     logger.error(f"فشل الترجمة كلياً بعد 6 محاولات — يُبقى الأصل: {text[:60]}")
