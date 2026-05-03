@@ -189,6 +189,9 @@ def build_translation_pdf(
     if written == 0:
         story.append(Paragraph(_esc(_ar("لم يُعثر على نص قابل للقراءة.")), ar_style))
 
+    if not story:
+        story.append(Paragraph(_esc(_ar("لم يُعثر على نص قابل للقراءة.")), ar_style))
+
     doc.build(story)
     logger.info(f"PDF جاهز ({written} فقرة): {output_path}")
     return output_path
