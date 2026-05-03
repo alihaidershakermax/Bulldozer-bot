@@ -1,8 +1,8 @@
 """
 مترجم فقرات — إنجليزي → عربي
 =================================
-المحرك الأساسي : Bing (translators)
-الاحتياطي      : Google (deep_translator)
+المحركات:
+- Bing / Microsoft / Google / Yandex
 - بدون API key
 - async عبر asyncio.to_thread
 - 5 فقرات بالتوازي
@@ -11,7 +11,6 @@
 import re
 import asyncio
 import logging
-import random
 from typing import List, Tuple, Callable, Awaitable, Optional
 
 logger = logging.getLogger(__name__)
@@ -280,7 +279,7 @@ def _translate_sync(text: str) -> str:
 def _translate_chunk(text: str) -> str:
     """
     يترجم chunk واحد بنظام متعدد المحاولات:
-      Bing × 3  →  Google × 3  →  إنجليزي أصلي (آخر ملاذ)
+      Bing → Microsoft → Google → Yandex
     بعد كل فشل يتحقق من نسبة العربي (≥ 40%) قبل القبول.
     """
     import time
@@ -291,25 +290,23 @@ def _translate_chunk(text: str) -> str:
         ("google", _google_translate),
         ("yandex", _yandex_translate),
     ]
-    random.shuffle(providers)
-    providers.insert(0, ("bing", _bing_translate))
 
     for name, fn in providers:
-        for attempt in range(1, 3):
+        for attempt in range(1, 4):
             try:
                 result = fn(text)
                 if _is_valid_translation(text, result):
                     return result
                 logger.warning(
-                    f"{name} محاولة {attempt}/2 — نتيجة غير مقبولة: {result[:50]!r}"
+                    f"{name} محاولة {attempt}/3 — نتيجة غير مقبولة: {result[:50]!r}"
                 )
             except Exception as e:
-                logger.warning(f"{name} خطأ (محاولة {attempt}/2): {e}")
-            if attempt < 2:
+                logger.warning(f"{name} خطأ (محاولة {attempt}/3): {e}")
+            if attempt < 3:
                 time.sleep(0.5)
 
     # ── آخر ملاذ: أبقِ الإنجليزي ─────────────────────────────────────────────
-    logger.error(f"فشل الترجمة كلياً بعد 6 محاولات — يُبقى الأصل: {text[:60]}")
+    logger.error(f"فشل الترجمة كلياً بعد 12 محاولات — يُبقى الأصل: {text[:60]}")
     return text
 
 
