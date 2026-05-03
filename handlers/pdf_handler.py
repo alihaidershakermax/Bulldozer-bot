@@ -27,6 +27,7 @@ from config import MAX_FILE_SIZE_MB
 logger = logging.getLogger(__name__)
 MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 _FILE_QUEUE = asyncio.Semaphore(int(os.getenv("PDF_CONCURRENCY", "1")))
+_QUEUE_WAITING = 0
 
 
 def _user(update: Update):
@@ -47,8 +48,38 @@ async def _daily_limit_text(user_id: int) -> str:
 
 
 async def handle_pdf(update: Update, context) -> None:
+    global _QUEUE_WAITING
+    user_id, _ = _user(update)
+    admin = is_admin(update)
+    queue_position = 0
+    queue_message = None
+
+    if _FILE_QUEUE.locked():
+        _QUEUE_WAITING += 1
+        queue_position = _QUEUE_WAITING
+        if update.message:
+            queue_message = await update.message.reply_text(
+                f"⏳ ملفك داخل الطابور الآن\n"
+                f"📌 ترتيبك: {queue_position}\n"
+                f"👤 الأدمن/الطوارئ تتجاوز الطابور: {'نعم' if admin else 'لا'}",
+                parse_mode=ParseMode.HTML,
+            )
+
     async with _FILE_QUEUE:
-        await _handle_pdf_locked(update, context)
+        if queue_message:
+            try:
+                await queue_message.edit_text(
+                    f"⏳ نبدت المعالجة\n"
+                    f"📌 ترتيبك السابق: {queue_position}",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception:
+                pass
+        try:
+            await _handle_pdf_locked(update, context)
+        finally:
+            if queue_position:
+                _QUEUE_WAITING = max(_QUEUE_WAITING - 1, 0)
 
 
 async def _handle_pdf_locked(update: Update, context) -> None:
