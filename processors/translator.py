@@ -285,16 +285,18 @@ def _translate_chunk(text: str) -> str:
     import time
 
     providers = [
-        ("bing", _bing_translate),
         ("microsoft", _microsoft_translate),
         ("google", _google_translate),
         ("yandex", _yandex_translate),
+        ("bing", _bing_translate),
     ]
 
     for name, fn in providers:
         for attempt in range(1, 4):
             try:
                 result = fn(text)
+                if name == "bing" and "JavaScript runtime" in result:
+                    raise RuntimeError(result)
                 if _is_valid_translation(text, result):
                     return result
                 logger.warning(
