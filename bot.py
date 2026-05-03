@@ -181,6 +181,8 @@ _ADMIN_ONLY_TEXTS = {
 
 
 async def handle_keyboard_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
     text  = (update.message.text or "").strip()
     admin = is_admin(update)
     # المستخدم العادي يرى USER_KEYBOARD فقط — لا يُعطى ADMIN_KEYBOARD أبداً
