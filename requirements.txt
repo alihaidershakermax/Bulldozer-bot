@@ -1,0 +1,15 @@
+python-telegram-bot==20.7
+pytesseract==0.3.10
+pdf2image==1.17.0
+reportlab==4.0.9
+deep-translator==1.11.4
+translators==5.9.2
+arabic-reshaper==3.0.0
+python-bidi==0.4.2
+python-dotenv==1.0.0
+Pillow==10.4.0
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+convex==0.7.0
+aiohttp==3.9.5
+httpx==0.25.2
